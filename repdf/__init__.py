@@ -15,7 +15,7 @@ client = commands.Bot(
     case_insensitive=True,
     intents=intents
 )
-# discordクライアントの準備、コマンドプレフィックス(先頭につけるあれ)を!に指定とメンションでも反応、上記3行のインテンツの読み込み
+# discordクライアントの準備、コマンドプレフィックス(先頭につける文字)を!に指定とメンションでも反応、上記3行のインテンツの読み込み
 # 起動確認
 TOKEN = os.environ.get("DISCO_TOKEN")
 print(intents.members)
