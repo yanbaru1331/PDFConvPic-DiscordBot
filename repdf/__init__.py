@@ -215,8 +215,6 @@ async def txt(ctx, *args):
                 text = text + tmp
             
             print(text)
-            await thread.send("aaa")
-            #ここまでは動いている
             
             #切り上げをすることで+1回=あまり部分の送信
             for i in range(-(len(text)//-1900)):
