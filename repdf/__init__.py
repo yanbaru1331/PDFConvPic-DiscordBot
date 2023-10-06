@@ -3,6 +3,10 @@ import datetime
 import pdf2image
 import os
 import re
+from dotenv import load_dotenv
+from os.path import join, dirname
+import pyocr
+
 from discord.ext import commands
 from  discord import app_commands
 
@@ -17,7 +21,10 @@ client = commands.Bot(
 )
 # discordクライアントの準備、コマンドプレフィックス(先頭につける文字)を!に指定とメンションでも反応、上記3行のインテンツの読み込み
 # 起動確認
-TOKEN = os.environ.get("DISCO_TOKEN")
+# TOKEN = os.getenv('DISCORD_TOKEN')
+dotenv_path = join(dirname(__name__), '.env')
+load_dotenv(verbose=True, dotenv_path=dotenv_path)
+
 print(intents.members)
 
 
@@ -134,6 +141,93 @@ async def pdf(ctx, *args):
     # エラー処理
     else:
         await ctx.reply("ファイルもリンクも無いから変換できないンゴ")    
+   
+@client.command()
+async def txt(ctx, *args):
+    try:
+        checkId = ctx.message.channel.parent.id
+        threadId = ctx.message.channel.id
+        thFlug = 1
+    except:
+        thFlug = 0
+
+    if ctx.author.bot:
+        return
+
+
+    temp = "\\\\".join(args)
+    # paramsに\\\\で区切った文字列を配列として代入
+    params = temp.split("\\\\")
+    # paramsの要素を1つずつ確認
+    for i in params:
+        # Disocrd内で使用しているurlの抽出
+        urlGet = re.search('(https://discord.com/channels/)+[/\d+]+', i)
+        # 他の文字列等でNone(NULL)が帰ってきたときを除いてオブジェクトからstringのみurlに代入
+        # 複数のURL対応ならここを配列とappendにしておく
+        if urlGet is not None:
+            url = urlGet.string
+
+       # urlを/で分割してIDの抽出をする
+    try:
+        UrlCheck = url.split('/')
+    except:
+        UrlCheck = []
+        
+    # ファイル添付の場合の処理
+    # 送信されたメッセージに添付ファイルがあることを確認
+    if ctx.message.attachments != []:
+        # スレッドで呼び出されたらそのスレッド内で完結するようにする、呼ばれてないなら
+        # スレッド作ってそこに送信
+        if thFlug == 0:
+            thread = await ctx.message.create_thread(
+                name=(f"{datetime.datetime.now().strftime('%Y%m%d%H%M')}conversion text"),
+                auto_archive_duration=10080,
+                slowmode_delay=0
+            )
+        elif thFlug == 1:
+            thread = client.get_channel(threadId)
+
+        # 以下の処理でmessageはmessageオブジェクトを指しているので
+        message = ctx.message
+        for attachment in message.attachments:
+            # pdf以外を除外 ->画像もいいかも
+            if attachment.content_type != "application/pdf":
+                continue
+            #   処理関数の実行
+            tools = pyocr.get_available_tools()
+            if len(tools) == 0:
+                await ctx.reply("OCRが起動してません。管理者に問い合わせてください")    
+            
+            tool = tools[0]
+            await attachment.save(f"{message.id}.pdf")
+            images = pdf2image.convert_from_path(f"./{message.id}.pdf")
+            #lang = 'eng'
+            lang = 'jpn'
+            text = ""
+            # 画像オブジェクトからテキストに
+            for image in images:
+                tmp = ""
+                tmp = tool.image_to_string(
+                   image,
+                   lang=lang,
+                   builder=pyocr.builders.TextBuilder()
+               )
+                text = text + tmp
+            
+            print(text)
+            await thread.send("aaa")
+            #ここまでは動いている
+            
+            #切り上げをすることで+1回=あまり部分の送信
+            for i in range(-(len(text)//-1900)):
+                await thread.send(text[:1900])
+                text = text[1900:]
+                
+            os.remove(f"{message.id}.pdf")
+                
+            
+            
+            
     
 async def conv_pdf(attachment, message, thread):
     # ファイルの保存
@@ -149,4 +243,4 @@ async def conv_pdf(attachment, message, thread):
     # pdfの削除
     os.remove(f"{message.id}.pdf")
 
-client.run(TOKEN)
+client.run(os.getenv('DISCORD_TOKEN'))

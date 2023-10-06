@@ -11,7 +11,5 @@ RUN wget -O - https://install.python-poetry.org | python3 - \
     && ln -s /opt/poetry/bin/poetry \
     && poetry config virtualenvs.create false \
     && apt update \
-    && apt install poppler-utils poppler-data -y
-
-
-
+    && apt install poppler-utils poppler-data -y \
+    && apt install tesseract-ocr libtesseract-dev poppler-utils tesseract-ocr-jpn -y \
