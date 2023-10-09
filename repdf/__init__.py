@@ -193,33 +193,7 @@ async def txt(ctx, *args):
             # pdf以外を除外 ->画像もいいかも
             if attachment.content_type != "application/pdf":
                 continue
-            #   処理関数の実行
-            tools = pyocr.get_available_tools()
-            if len(tools) == 0:
-                await ctx.reply("OCRが起動してません。管理者に問い合わせてください")    
-            
-            tool = tools[0]
-            await attachment.save(f"{message.id}.pdf")
-            images = pdf2image.convert_from_path(f"./{message.id}.pdf")
-            #lang = 'eng'
-            lang = 'jpn'
-            text = ""
-            # 画像オブジェクトからテキストに
-            for image in images:
-                tmp = ""
-                tmp = tool.image_to_string(
-                   image,
-                   lang=lang,
-                   builder=pyocr.builders.TextBuilder()
-               )
-                text = text + tmp
-            
-            print(text)
-            
-            #切り上げをすることで+1回=あまり部分の送信
-            for i in range(-(len(text)//-1900)):
-                await thread.send(text[:1900])
-                text = text[1900:]
+            await conv_text(attachment, message, thread)
                 
             os.remove(f"{message.id}.pdf")
                 
@@ -240,5 +214,32 @@ async def conv_pdf(attachment, message, thread):
         os.remove(f"{message.id}-{str(index+1)}.jpg")
     # pdfの削除
     os.remove(f"{message.id}.pdf")
+    
+async def conv_text(attachment, message, thread):
+        #   処理関数の実行
+    tools = pyocr.get_available_tools()
+    if len(tools) == 0:
+        await ctx.reply("OCRが起動してません。管理者に問い合わせてください")    
+    
+    tool = tools[0]
+    await attachment.save(f"{message.id}.pdf")
+    images = pdf2image.convert_from_path(f"./{message.id}.pdf")
+    #lang = 'eng'
+    lang = 'jpn'
+    text = ""
+    # 画像オブジェクトからテキストに
+    for image in images:
+        tmp = ""
+        tmp = tool.image_to_string(
+            image,
+            lang=lang,
+            builder=pyocr.builders.TextBuilder()
+        )
+        text = text + tmp
+    
+    #切り上げをすることで+1回=あまり部分の送信
+    for i in range(-(len(text)//-1900)):
+        await thread.send(text[:1900])
+        text = text[1900:]
 
 client.run(os.getenv('DISCORD_TOKEN'))
