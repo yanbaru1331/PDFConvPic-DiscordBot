@@ -21,7 +21,6 @@ client = commands.Bot(
 )
 # discordクライアントの準備、コマンドプレフィックス(先頭につける文字)を!に指定とメンションでも反応、上記3行のインテンツの読み込み
 # 起動確認
-# TOKEN = os.getenv('DISCORD_TOKEN')
 dotenv_path = join(dirname(__name__), '.env')
 load_dotenv(verbose=True, dotenv_path=dotenv_path)
 
